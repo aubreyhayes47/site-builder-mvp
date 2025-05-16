@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Internal Site Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f8f9; color: #333; }
+        nav { background-color: #333; padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        nav .nav-links a { color: white; text-decoration: none; margin-right: 20px; font-size: 16px; }
+        nav .nav-links a:hover { text-decoration: underline; }
+        nav .user-info { font-size: 16px; color: white; }
+        nav .user-info a { margin-left: 10px; color: #82ccdd; }
+        .container { padding: 20px 30px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #e9ecef; }
+        .action-links a { margin-right: 10px; text-decoration: none; } /* Default color will be inherited or can be set */
+        .action-links a.edit-link { color: #007bff; } /* Blue for edit */
+        .action-links a.manage-link { color: #17a2b8; } /* Info/cyan for manage pages */
+        .action-links a.export-link { color: #28a745; } /* Green for export */
+        .action-links a:hover { text-decoration: underline; }
+        .link-button { background-color: transparent; border: none; color: #dc3545; padding: 0; text-decoration: underline; cursor: pointer; font-size: inherit; font-family: inherit; display: inline; vertical-align: baseline; margin: 0; margin-right: 10px; /* Added margin for spacing like other links */ }
+        .link-button:hover, .link-button:focus { color: #c82333; text-decoration: underline; }
+        .button-link { display: inline-block; padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-bottom:20px; }
+        .button-link:hover { background-color: #0056b3; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 5px; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .pagination { margin-top: 20px; text-align:center; }
+        .pagination a { margin: 0 5px; padding: 8px 12px; text-decoration: none; color: #007bff; border: 1px solid #ddd; border-radius:4px; }
+        .pagination a.active { background-color: #007bff; color: white; border-color: #007bff; }
+        .pagination span.disabled { margin: 0 5px; padding: 8px 12px; color: #6c757d; border: 1px solid #ddd; border-radius:4px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.list_templates') }}">Pages</a>  {# RENAMED #}
+            <a href="{{ url_for('main.list_projects') }}">Websites</a> {# RENAMED #}
+        </div>
+        <div class="user-info">
+            Logged in as: {{ current_user.username }}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>{{ title }} (Website Projects)</h1> {# Clarified title display #}
+        <p><a href="{{ url_for('main.new_project') }}" class="button-link">Create New Project</a></p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if projects and projects|length > 0 %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Site Title</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.site_title if project.site_title else 'N/A' }}</td>
+                    <td>{{ project.created_at.strftime('%Y-%m-%d %H:%M') if project.created_at else 'N/A' }}</td>
+                    <td class="action-links">
+                        <a href="{{ url_for('main.edit_project', project_id=project.id) }}" class="edit-link">Edit</a>
+                        <a href="{{ url_for('main.list_project_pages', project_id=project.id) }}" class="manage-link">Manage Pages</a>
+                        <a href="{{ url_for('main.export_project_zip', project_id=project.id) }}" class="export-link">Export ZIP</a>
+                        <form action="{{ url_for('main.delete_project', project_id=project.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete the project \'{{ project.project_name }}\'? This may also delete all pages and content within this project. This action cannot be undone!');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="link-button">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No website projects found. <a href="{{ url_for('main.new_project') }}">Create one now!</a></p>
+        {% endif %}
+
+        {% if pagination and pagination.pages > 1 %}
+        <div class="pagination">
+            {% if pagination.has_prev %}<a href="{{ url_for('main.list_projects', page=pagination.prev_num) }}">&laquo; Previous</a>{% else %}<span class="disabled">&laquo; Previous</span>{% endif %}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}<a href="{{ url_for('main.list_projects', page=page_num) }}" class="active">{{ page_num }}</a>{% else %}<a href="{{ url_for('main.list_projects', page=page_num) }}">{{ page_num }}</a>{% endif %}
+                {% else %}<span class="disabled">...</span>{% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}<a href="{{ url_for('main.list_projects', page=pagination.next_num) }}">Next &raquo;</a>{% else %}<span class="disabled">Next &raquo;</span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

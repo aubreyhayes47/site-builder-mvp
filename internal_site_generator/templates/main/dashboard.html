@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Internal Site Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f8f9; color: #333; }
+        nav { background-color: #333; padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        nav .nav-links a { color: white; text-decoration: none; margin-right: 20px; font-size: 16px; }
+        nav .nav-links a:hover { text-decoration: underline; }
+        nav .user-info { font-size: 16px; color: white; }
+        nav .user-info a { margin-left: 10px; color: #82ccdd; /* Light blue for logout */ }
+        .container { padding: 20px 30px; }
+        h1, h2, h3 { color: #333; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 5px; }
+        .alert-info { color: #004085; background-color: #cce5ff; border-color: #b8daff; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .button-link { display: inline-block; padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; margin-right: 10px;}
+        .button-link:hover { background-color: #0056b3; }
+        ul { list-style-type: none; padding: 0; }
+        li { background-color: #fff; margin-bottom: 8px; padding: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .sections { display: flex; flex-wrap: wrap; gap: 20px; }
+        .section { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex: 1; min-width: 300px;}
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.list_templates') }}">Pages</a>  {# RENAMED: Was Manage Page Templates #}
+            <a href="{{ url_for('main.list_projects') }}">Websites</a> {# RENAMED: Was Manage Website Projects #}
+        </div>
+        <div class="user-info">
+            Logged in as: {{ current_user.username }}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Welcome to the Dashboard!</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="sections">
+            <div class="section">
+                <h2>Page Templates</h2>
+                <p><a href="{{ url_for('main.new_template') }}" class="button-link">Create New Template</a></p>
+                {% if page_templates_sample %}
+                <ul>
+                    {% for tpl in page_templates_sample %}
+                    <li>{{ tpl.name }}</li>
+                    {% endfor %}
+                </ul>
+                    {% if page_templates_count > 5 %}
+                    <p><a href="{{ url_for('main.list_templates') }}">View all page templates...</a></p>
+                    {% endif %}
+                {% else %}
+                <p>No page templates yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h2>Website Projects</h2>
+                <p><a href="{{ url_for('main.new_project') }}" class="button-link">Create New Project</a></p>
+                {% if website_projects_sample %}
+                <ul>
+                    {% for project in website_projects_sample %}
+                    <li>{{ project.project_name }}</li>
+                    {% endfor %}
+                </ul>
+                    {% if website_projects_count > 5 %}
+                    <p><a href="{{ url_for('main.list_projects') }}">View all website projects...</a></p>
+                    {% endif %}
+                {% else %}
+                <p>No website projects yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

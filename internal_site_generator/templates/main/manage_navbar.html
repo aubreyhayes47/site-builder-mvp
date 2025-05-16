@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Internal Site Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f8f9; color: #333; }
+        nav { background-color: #333; padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        nav .nav-links a { color: white; text-decoration: none; margin-right: 20px; font-size: 16px; }
+        nav .nav-links a:hover { text-decoration: underline; }
+        nav .user-info { font-size: 16px; color: white; }
+        nav .user-info a { margin-left: 10px; color: #82ccdd; }
+        .container { padding: 20px 30px; max-width: 900px; margin: 20px auto; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 20px; }
+        .breadcrumb { margin-bottom: 20px; font-size: 0.9em; color: #555; }
+        .breadcrumb a { color: #007bff; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb span.current-page { color: #333; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #e9ecef; font-weight: bold; }
+        input[type="text"], input[type="number"] {
+            width: 95%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px;
+        }
+        input[type="number"] { width: 70px; }
+        input[type="checkbox"] { transform: scale(1.2); margin-right: 8px; }
+        input[type="submit"] {
+            padding: 10px 18px; background-color: #28a745; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 16px;
+            margin-top: 20px; transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover { background-color: #218838; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 5px; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .instructions { background-color: #eef; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9em; }
+        /* tbody.sortable-placeholder { height: 50px; background-color: #f0f8ff; } */ /* For jQuery UI sortable */
+    </style>
+    </head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.list_templates') }}">Page Templates</a>
+            <a href="{{ url_for('main.list_projects') }}">Website Projects</a>
+        </div>
+        <div class="user-info">
+            Logged in as: {{ current_user.username }}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Dashboard</a> &raquo;
+            <a href="{{ url_for('main.list_projects') }}">Websites</a> &raquo;
+            <a href="{{ url_for('main.list_project_pages', project_id=project.id) }}">{{ project.project_name }} - Pages</a> &raquo;
+            <span class="current-page">Manage Navbar</span>
+        </div>
+
+        <h1>{{ title }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="instructions">
+            <p>Check the pages you want to include in the navigation bar.
+            You can customize the link text and set the order (lower numbers appear first).
+            Page slug is shown for reference.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.manage_navbar', project_id=project.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            {% if pages %}
+            <table id="navbar-config-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Include</th>
+                        <th>Page Title <small>(Slug)</small></th>
+                        <th>Link Text <small>(Defaults to Page Title)</small></th>
+                        <th style="width: 100px;">Order</th>
+                    </tr>
+                </thead>
+                <tbody id="navbar-sortable-body"> {# ID for potential JS sorting #}
+                    {% for page_item in pages %}
+                    {% set nav_config = current_navbar_config.get(page_item.id, {}) %}
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="page_in_navbar_{{ page_item.id }}" id="page_in_navbar_{{ page_item.id }}"
+                                   {% if nav_config.in_navbar %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <label for="page_in_navbar_{{ page_item.id }}" style="font-weight:normal;">{{ page_item.title }}</label>
+                            <small>(/{{ page_item.slug }})</small>
+                        </td>
+                        <td>
+                            <input type="text" name="link_text_{{ page_item.id }}"
+                                   value="{{ nav_config.get('link_text', page_item.title) }}">
+                        </td>
+                        <td>
+                            <input type="number" name="order_{{ page_item.id }}"
+                                   value="{{ nav_config.get('order', '0') }}" min="0">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p><input type="submit" value="Save Navbar Configuration"></p>
+            {% else %}
+            <p>No pages found for this project. <a href="{{ url_for('main.new_project_page', project_id=project.id) }}">Add pages first</a> to configure the navbar.</p>
+            {% endif %}
+        </form>
+    </div>

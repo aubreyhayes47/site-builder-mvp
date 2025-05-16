@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Internal Site Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f8f9; color: #333; }
+        nav { background-color: #333; padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        nav .nav-links a { color: white; text-decoration: none; margin-right: 20px; font-size: 16px; }
+        nav .nav-links a:hover { text-decoration: underline; }
+        nav .user-info { font-size: 16px; color: white; }
+        nav .user-info a { margin-left: 10px; color: #82ccdd; }
+        .container { padding: 20px 30px; }
+        h1, h2 { color: #333; }
+        .breadcrumb { margin-bottom: 20px; font-size: 0.9em; color: #555; }
+        .breadcrumb a { color: #007bff; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb span.current-page { color: #333; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #e9ecef; }
+        .action-links a, .link-button { margin-right: 10px; color: #007bff; text-decoration: none; }
+        .action-links a:hover, .link-button:hover { text-decoration: underline; }
+        .link-button { background-color: transparent; border: none; color: #dc3545; padding: 0; text-decoration: underline; cursor: pointer; font-size: inherit; font-family: inherit; display: inline; vertical-align: baseline; margin: 0; }
+        .delete-action .link-button { color: #dc3545; } 
+        .delete-action .link-button:hover { color: #c82333; }
+        .button-link, .action-button { /* Combined style for button-like links/buttons */
+            display: inline-block; 
+            padding: 10px 15px; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            margin-bottom:20px; 
+            margin-right: 10px; /* Spacing between buttons */
+            border: none; /* For actual button elements if used */
+            cursor: pointer; /* For actual button elements if used */
+            font-size: inherit; /* For actual button elements if used */
+        }
+        .button-link.add-page { background-color: #28a745; } /* Green for add */
+        .button-link.add-page:hover { background-color: #218838; }
+        .button-link.manage-navbar { background-color: #17a2b8; } /* Info/cyan for manage navbar */
+        .button-link.manage-navbar:hover { background-color: #117a8b; }
+        .button-link.export-project { background-color: #28a745; } /* Green for export, consistent with add */
+        .button-link.export-project:hover { background-color: #218838; }
+
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 5px; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .project-actions { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.list_templates') }}">Pages</a>
+            <a href="{{ url_for('main.list_projects') }}">Websites</a>
+        </div>
+        <div class="user-info">
+            Logged in as: {{ current_user.username }}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Dashboard</a> &raquo; 
+            <a href="{{ url_for('main.list_projects') }}">Websites</a> &raquo; 
+            <span class="current-page">{{ project.project_name }} - Pages</span>
+        </div>
+
+        <h1>{{ title }}</h1>
+        
+        <div class="project-actions">
+            <a href="{{ url_for('main.manage_navbar', project_id=project.id) }}" class="button-link manage-navbar">Manage Navbar</a>
+            <a href="{{ url_for('main.export_project_zip', project_id=project.id) }}" class="button-link export-project">Export Project to ZIP</a>
+            <a href="{{ url_for('main.new_project_page', project_id=project.id) }}" class="button-link add-page" style="float: right;">Add New Page</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if pages and pages|length > 0 %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Page Title</th>
+                    <th>Slug</th>
+                    <th>Template Used</th>
+                    <th>In Navbar?</th> {# Assuming you have this info; adjust if needed #}
+                    <th>Navbar Order</th> {# Assuming you have this info; adjust if needed #}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for page_item in pages %}
+                <tr>
+                    <td>{{ page_item.title }}</td>
+                    <td>/{{ page_item.slug }}.html</td> {# Added .html for clarity #}
+                    <td>{{ page_item.template.name if page_item.template else 'N/A' }}</td>
+                    {# You might need to fetch NavbarItem info here if you want to display 'In Navbar?' accurately #}
+                    {# For simplicity, I'll leave placeholder logic or remove these columns if data isn't readily available #}
+                    {# This example assumes page_item might have these attributes directly or via a property/method #}
+                    <td>{{ 'Yes' if page_item.navbar_item else 'No' }}</td> {# Example: if page_item has a direct link to its navbar_item #}
+                    <td>{{ page_item.navbar_item.order if page_item.navbar_item else 'N/A' }}</td>
+                    <td class="action-links">
+                        <a href="{{ url_for('main.preview_page', page_id=page_item.id) }}" target="_blank">Preview</a>
+                        <a href="{{ url_for('main.edit_page_content', project_id=project.id, page_id=page_item.id) }}">Edit Content</a>
+                        <a href="{{ url_for('main.edit_project_page_settings', project_id=project.id, page_id=page_item.id) }}">Settings</a>
+                        <span class="delete-action">
+                            <form action="{{ url_for('main.delete_project_page', project_id=project.id, page_id=page_item.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete the page \'{{ page_item.title }}\'? This action cannot be undone.');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="link-button">Delete</button>
+                            </form>
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No pages found for this project yet. <a href="{{ url_for('main.new_project_page', project_id=project.id) }}">Add one now!</a></p>
+        {% endif %}
+    </div>
+</body>
+</html>

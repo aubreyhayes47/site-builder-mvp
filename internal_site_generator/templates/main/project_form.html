@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Internal Site Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f8f9; color: #333; }
+        nav { background-color: #333; padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        nav .nav-links a { color: white; text-decoration: none; margin-right: 20px; font-size: 16px; }
+        nav .nav-links a:hover { text-decoration: underline; }
+        nav .user-info { font-size: 16px; color: white; }
+        nav .user-info a { margin-left: 10px; color: #82ccdd; }
+        .container { padding: 20px 30px; max-width: 800px; margin: 20px auto; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; margin-bottom: 20px; }
+        .form-field { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="color"] { /* Style for the native color picker */
+            min-height: 40px; /* Ensure it's a decent size */
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        textarea { min-height: 150px; font-family: Consolas,monaco,monospace; }
+        input[type="submit"] {
+            padding: 12px 20px;
+            background-color: #28a745; color: white; border: none; border-radius: 4px;
+            cursor: pointer; font-size: 16px; transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover { background-color: #218838; }
+        .error-message { color: #d9534f; font-size: 0.9em; margin-top: 5px; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 5px; }
+        .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba;}
+        .color-input-group { display: flex; align-items: center; gap: 10px; }
+        .color-input-group input[type="text"] { flex-grow: 1; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.list_templates') }}">Page Templates</a>
+            <a href="{{ url_for('main.list_projects') }}">Website Projects</a>
+        </div>
+        <div class="user-info">
+            Logged in as: {{ current_user.username }}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>{{ legend | default(title) }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="" novalidate enctype="multipart/form-data"> {# Added enctype #}
+            {{ form.hidden_tag() }}
+            <div class="form-field">
+                {{ form.project_name.label }}
+                {{ form.project_name(class="form-control") }}
+                {% if form.project_name.errors %}{% for error in form.project_name.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            <div class="form-field">
+                {{ form.site_title.label }}
+                {{ form.site_title(class="form-control") }}
+                {% if form.site_title.errors %}{% for error in form.site_title.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            
+            <h2>Theme Colors</h2>
+            <div class="form-field">
+                {{ form.primary_color.label }}
+                <div class="color-input-group">
+                    <input type="color" id="{{ form.primary_color.id }}_picker" value="{{ form.primary_color.data or '#007BFF' }}">
+                    {{ form.primary_color(class="form-control", placeholder="#RRGGBB") }}
+                </div>
+                {% if form.primary_color.errors %}{% for error in form.primary_color.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            <div class="form-field">
+                {{ form.secondary_color.label }}
+                <div class="color-input-group">
+                    <input type="color" id="{{ form.secondary_color.id }}_picker" value="{{ form.secondary_color.data or '#6C757D' }}">
+                    {{ form.secondary_color(class="form-control", placeholder="#RRGGBB") }}
+                </div>
+                {% if form.secondary_color.errors %}{% for error in form.secondary_color.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+            <div class="form-field">
+                {{ form.accent_color.label }}
+                <div class="color-input-group">
+                    <input type="color" id="{{ form.accent_color.id }}_picker" value="{{ form.accent_color.data or '#FFC107' }}">
+                    {{ form.accent_color(class="form-control", placeholder="#RRGGBB") }}
+                </div>
+                {% if form.accent_color.errors %}{% for error in form.accent_color.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+
+            <div class="form-field">
+                {{ form.global_css.label }} (Optional)
+                {{ form.global_css(class="form-control", rows="10") }}
+                {% if form.global_css.errors %}{% for error in form.global_css.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+
+            <div class="form-field">
+                {{ form.favicon.label }}
+                {{ form.favicon() }}
+                {% if project_to_edit and project_to_edit.favicon_path %}
+                    <p style="margin-top:5px;">Current: <img src="{{ url_for('main.serve_asset', project_id=project_to_edit.id, asset_type='favicons', filename=project_to_edit.favicon_path) }}" alt="Current Favicon" style="width: 32px; height: 32px; vertical-align: middle;"></p>
+                {% endif %}
+                {% if form.favicon.errors %}{% for error in form.favicon.errors %}<div class="error-message">{{ error }}</div>{% endfor %}{% endif %}
+            </div>
+
+            <p>{{ form.submit() }}</p>
+        </form>
+    </div>
+
+    <script>
+        function setupColorPickerLink(pickerId, fieldId) {
+            const colorPicker = document.getElementById(pickerId);
+            const colorField = document.getElementById(fieldId);
+            if (colorPicker && colorField) {
+                // Set initial picker value from field if field has data and is valid hex
+                if (colorField.value && /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(colorField.value)) {
+                    colorPicker.value = colorField.value;
+                } else if (colorField.value === '') { // If field is empty, use picker's default
+                     // colorPicker.value is already set from `value` attribute in HTML
+                }
+
+                // Update field when picker changes
+                colorPicker.addEventListener('input', function() {
+                    colorField.value = this.value;
+                });
+                // Update picker if field changes (e.g., manual hex input)
+                colorField.addEventListener('input', function() { // Use 'input' for immediate feedback
+                    if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(this.value)) {
+                         colorPicker.value = this.value;
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setupColorPickerLink('{{ form.primary_color.id }}_picker', '{{ form.primary_color.id }}');
+            setupColorPickerLink('{{ form.secondary_color.id }}_picker', '{{ form.secondary_color.id }}');
+            setupColorPickerLink('{{ form.accent_color.id }}_picker', '{{ form.accent_color.id }}');
+        });
+    </script>
+</body>
+</html>

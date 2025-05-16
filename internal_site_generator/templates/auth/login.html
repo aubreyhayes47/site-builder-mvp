@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title | default("Our Awesome Services", true) }}</title>
+    <style>
+        /* Basic Reset and Body Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--theme-text-color, #333); /* Example: Default text color */
+            background-color: var(--theme-background-color, #f4f4f4); /* Example: Default background */
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: auto;
+            overflow: hidden;
+            padding: 0 20px;
+        }
+
+        /* Navbar Styling (Basic) - Actual links come from the placeholder */
+        nav.main-nav {
+            background: var(--theme-primary-color, #333);
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center; /* Default alignment */
+        }
+        nav.main-nav ul {
+            padding: 0;
+            list-style: none;
+            margin: 0;
+        }
+        nav.main-nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+        nav.main-nav a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav.main-nav a:hover {
+            text-decoration: underline;
+            color: var(--theme-accent-color, #efefef);
+        }
+
+        /* Hero Section */
+        .hero {
+            background-image: url('{{ hero.background_image_src | default("https://via.placeholder.com/1200x400.png?text=Default+Hero+Image") }}');
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            padding: 60px 20px;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 0 1000px rgba(0,0,0,0.4); /* Dark overlay for text readability */
+        }
+        .hero h1 {
+            font-size: 2.8em;
+            margin-bottom: 0.5em;
+            color: #fff; /* Ensure hero H1 color is distinct */
+        }
+        .hero p {
+            font-size: 1.2em;
+            margin-bottom: 1.5em;
+        }
+        .hero .cta-button {
+            display: inline-block;
+            background: var(--theme-accent-color, #ff8c00);
+            color: #fff;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+        }
+        .hero .cta-button:hover {
+            background: #fff;
+            color: var(--theme-accent-color, #ff8c00);
+        }
+
+        /* Section Styling */
+        .section {
+            padding: 40px 0;
+            text-align: center;
+        }
+        .section-light {
+            background-color: #fff;
+        }
+        .section-dark {
+            background-color: var(--theme-secondary-color, #e9ecef);
+            color: var(--theme-primary-color, #333); /* Text color for dark sections */
+        }
+        .section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: var(--theme-primary-color, #333);
+        }
+        .section-dark h2 {
+             color: var(--theme-primary-color, #fff); /* Example if secondary is dark */
+        }
+
+
+        /* About Section */
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        /* Services Section */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .service-item {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        .service-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .service-item h3 {
+            font-size: 1.4em;
+            color: var(--theme-primary-color, #333);
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        /* CTA Section */
+        .cta-section .cta-button {
+            display: inline-block;
+            background: var(--theme-primary-color, #007bff);
+            color: #fff;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+            margin-top: 15px;
+        }
+        .cta-section .cta-button:hover {
+            background: var(--theme-accent-color, #0056b3);
+        }
+
+
+        /* Footer */
+        footer {
+            background: #333;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+        }
+
+        /* Utility for image placeholders if no image is provided */
+        .placeholder-image {
+            width: 100%;
+            height: 180px;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-style: italic;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="main-nav container">
+CUSTOM MARKER
+            </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>{{ hero.headline | default("Expert Home Services You Can Trust")}}</h1>
+            <p>{{ hero.subheadline | default("Reliable, professional, and affordable. Contact us today!")}}</p>
+            <a href="{{ hero.cta_button_link | default("#")}}" class="cta-button">{{ hero.cta_button_text | default("Get a Free Quote")}}</a>
+        </div>
+    </section>
+
+    <section id="about" class="section section-light">
+        <div class="container about-content">
+            <h2>{{ about.title | default("About Our Company")}}</h2>
+            <p>{{ about.text | default("We are a dedicated team of professionals committed to providing top-notch home services. With years of experience under our belts, we ensure every job is done right the first time. Our mission is to exceed your expectations with quality workmanship and exceptional customer service.") }}</p>
+        </div>
+    </section>
+
+    <section id="services" class="section section-dark">
+        <div class="container">
+            <h2>{{ services.main_title | default("Our Core Services")}}</h2>
+            <div class="services-grid">
+                <div class="service-item">
+                    {% if services.service_1_image_src %}
+                        <img src="{{ services.service_1_image_src }}" alt="{{ services.service_1_title | default("Service One")}}">
+                    {% else %}
+                        <div class="placeholder-image">Service 1 Image</div>
+                    {% endif %}
+                    <h3>{{ services.service_1_title | default("Residential Plumbing")}}</h3>
+                    <p>{{ services.service_1_description | default("From leaky faucets to major pipe repairs, we handle all your plumbing needs with precision and care.")}}</p>
+                </div>
+                <div class="service-item">
+                     {% if services.service_2_image_src %}
+                        <img src="{{ services.service_2_image_src }}" alt="{{ services.service_2_title | default("Service Two")}}">
+                    {% else %}
+                        <div class="placeholder-image">Service 2 Image</div>
+                    {% endif %}
+                    <h3>{{ services.service_2_title | default("Electrical Wiring and Repairs")}}</h3>
+                    <p>{{ services.service_2_description | default("Safe and certified electrical services, including installations, upgrades, and troubleshooting.")}}</p>
+                </div>
+                <div class="service-item">
+                     {% if services.service_3_image_src %}
+                        <img src="{{ services.service_3_image_src }}" alt="{{ services.service_3_title | default("Service Three")}}">
+                    {% else %}
+                        <div class="placeholder-image">Service 3 Image</div>
+                    {% endif %}
+                    <h3>{{ services.service_3_title | default("Landscaping and Garden Care")}}</h3>
+                    <p>{{ services.service_3_description | default("Transform your outdoor space with our expert landscaping design and maintenance services.")}}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact-cta" class="section section-light cta-section">
+        <div class="container">
+            <h2>{{ cta.title | default("Ready to Get Started?")}}</h2>
+            <p>{{ cta.text | default("Don't wait! Contact us now for a consultation or to schedule your service. We're here to help.")}}</p>
+            <a href="{{ cta.button_link | default("#")}}" class="cta-button">{{ cta.button_text | default("Contact Us Now")}}</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>{{ footer.copyright_text | default("&copy; 2025 Your Company Name. All Rights Reserved.")}}</p>
+        </div>
+    </footer>
+
+</body>
+</html>

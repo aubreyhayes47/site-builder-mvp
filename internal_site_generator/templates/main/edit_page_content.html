@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Internal Site Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f8f9; color: #333; }
+        nav { background-color: #333; padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        nav .nav-links a { color: white; text-decoration: none; margin-right: 20px; font-size: 16px; }
+        nav .nav-links a:hover { text-decoration: underline; }
+        nav .user-info { font-size: 16px; color: white; }
+        nav .user-info a { margin-left: 10px; color: #82ccdd; }
+        
+        .page-container { padding: 20px 30px; }
+        .breadcrumb { margin-bottom: 20px; font-size: 0.9em; color: #555; }
+        .breadcrumb a { color: #007bff; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb span.current-page { color: #333; font-weight: bold; }
+
+        .editor-layout { display: flex; flex-wrap: wrap; gap: 20px; }
+        .form-container { flex: 1; min-width: 400px; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .preview-container { flex: 2; min-width: 500px; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .form-container h1, .preview-container h2 { color: #333; margin-top:0; margin-bottom: 20px; }
+        .form-field { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; text-transform: capitalize; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        textarea { min-height: 100px; font-family: Consolas, monaco, monospace; }
+        input[type="submit"], .preview-button {
+            padding: 10px 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover, .preview-button:hover { background-color: #218838; }
+        .preview-button { background-color: #007bff; }
+        .preview-button:hover { background-color: #0056b3; }
+
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 5px; }
+        .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .placeholder-note { font-style: italic; color: #666; margin-bottom: 20px; }
+        
+        #preview-iframe {
+            width: 100%;
+            height: 600px; /* Adjust as needed */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .template-reference { margin-top: 30px; }
+        .template-reference h3 { margin-bottom: 10px; }
+        .template-reference pre { background-color: #eee; padding: 15px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.list_templates') }}">Pages</a>
+            <a href="{{ url_for('main.list_projects') }}">Websites</a>
+        </div>
+        <div class="user-info">
+            Logged in as: {{ current_user.username }}
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Dashboard</a> &raquo; 
+            <a href="{{ url_for('main.list_projects') }}">Websites</a> &raquo; 
+            <a href="{{ url_for('main.list_project_pages', project_id=project.id) }}">{{ project.project_name }} - Pages</a> &raquo;
+            <span class="current-page">Edit Content for {{ page.title }}</span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="editor-layout">
+            <div class="form-container">
+                <h1>{{ legend | default(title) }}</h1>
+                <p class="placeholder-note">Editing content based on template: <strong>{{ page.template.name }}</strong></p>
+
+                <form method="POST" action="{{ url_for('main.edit_page_content', project_id=project.id, page_id=page.id) }}" enctype="multipart/form-data" id="contentForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    {% if placeholders %}
+                        {% for placeholder_key in placeholders %}
+    <div class="form-field">
+        {% set label_text = placeholder_key.replace('_', ' ').replace('.', ' - ') | title %}
+        <label for="{{ placeholder_key }}">{{ label_text }}</label>
+        
+        {# Heuristic for image upload field #}
+        {% if 'image' in placeholder_key.lower() or placeholder_key.lower().endswith('_src') or placeholder_key.lower().endswith('_url') %}
+            {# Display current image if one exists #}
+            {% if current_content.get(placeholder_key) %}
+                <p>Current: <img src="{{ url_for('main.serve_asset', project_id=project.id, asset_type='images', filename=current_content.get(placeholder_key)) }}" alt="{{ label_text }}" style="max-width: 200px; max-height: 100px; display: block; margin-bottom: 5px;"></p> 
+                {# Assuming current_content stores the filename for images #}
+            {% endif %}
+            <input type="file" name="{{ placeholder_key }}_file" id="{{ placeholder_key }}_file"> 
+            {# Use a distinct name for the file input to differentiate from text input for URL #}
+            <input type="hidden" name="{{ placeholder_key }}" id="{{ placeholder_key }}" value="{{ current_content.get(placeholder_key, '') }}">
+            <p class="form-hint">Upload a new image to replace, or ensure the path below is correct.</p>
+        {% elif 'url' in placeholder_key or 'href' in placeholder_key or 'src' in placeholder_key or 'link' in placeholder_key %}
+            <input type="text" name="{{ placeholder_key }}" id="{{ placeholder_key }}" value="{{ current_content.get(placeholder_key, '') }}">
+        {% elif 'paragraph' in placeholder_key or 'text' in placeholder_key or 'content' in placeholder_key or 'description' in placeholder_key or 'html' in placeholder_key or 'body' in placeholder_key %}
+            <textarea name="{{ placeholder_key }}" id="{{ placeholder_key }}" rows="5">{{ current_content.get(placeholder_key, '') }}</textarea>
+        {% else %}
+            <input type="text" name="{{ placeholder_key }}" id="{{ placeholder_key }}" value="{{ current_content.get(placeholder_key, '') }}">
+        {% endif %}
+    </div>
+{% endfor %}
+                    {% else %}
+                        <p>No editable placeholders (e.g., <code>{{ '{{ content.name }}' }}</code>) found in the selected page template ("{{ page.template.name }}").</p>
+                        <p>Please edit the page template to include placeholders if you want to add content here.</p>
+                    {% endif %}
+                    
+                    {% if placeholders %}
+                    <p>
+                        <input type="submit" value="Save Content">
+                        <button type="button" class="preview-button" onclick="refreshPreview()">Refresh Preview</button>
+                    </p>
+                    {% endif %}
+                </form>
+                
+                <div class="template-reference">
+                    <h3>Template HTML Structure (for reference only):</h3>
+                    <pre><code>{{ page.template.html_content | e }}</code></pre>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <h2>Live Preview</h2>
+                <iframe id="preview-iframe" src="{{ url_for('main.preview_page', page_id=page.id) }}"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function refreshPreview() {
+            const iframe = document.getElementById('preview-iframe');
+            // Option 1: Just reload the current src (which should fetch fresh data)
+            iframe.src = iframe.src; 
+            
+            // Option 2: If you want to try and send current form data for a "live unsaved" preview (more complex)
+            // This would require the preview_page route to accept POST data or for JS to construct the HTML.
+            // For now, reloading the saved version is simpler.
+            // console.log('Preview refreshed with saved content.');
+        }
+
+        // Optional: Auto-refresh preview after successful save
+        // Since the page reloads on save (due to redirect in Flask), the iframe will also reload its src.
+        // If you didn't redirect and updated via AJAX, you'd call refreshPreview() on success.
+    </script>
+</body>
+</html>
